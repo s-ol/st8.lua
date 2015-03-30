@@ -27,13 +27,14 @@ local St8 = {
   ]]
 }
 
-local CALLBACKS = {"draw", "errhand", "focus", "keypressed", "keyreleased", "load", "mousefocus", "mousemoved", "mousepressed", "mousereleased", "quit", "resize", "run", "textinput", "threaderror", "update", "visible"}
+local CALLBACKS = {"draw", "focus", "keypressed", "keyreleased", "load", "mousefocus", "mousemoved", "mousepressed", "mousereleased", "quit", "resize", "run", "textinput", "threaderror", "update", "visible"}
 
 local State = {}
 for _,cb in ipairs({"enter", "exit", "pause", "resume", unpack(CALLBACKS)}) do
   State[cb] = function (p, ...) return p end
 end
 St8.old = setmetatable({}, {__index=State})
+St8._order = {}
 
 ---------------------------------------------------
 -- register St8 with LÖVE callbacks and enter `state` (if `state` is numerically indexed, it will be used as a _Stack_)
@@ -53,11 +54,23 @@ end
 -- handle `evt` using the current _Stack_
 function St8.handle(evt, ...)
   local stack = St8.stacks[#St8.stacks]
-  local prev = nil
-  for _,state in ipairs(stack) do
-    prev = state[evt](prev, ...)
+  local prev
+  if St8._order[evt] == "bottom" then
+    for _,state in ipairs(stack) do
+      prev = state[evt](prev, ...)
+    end
+  else
+    for i=#stack,1,-1 do
+      prev = stack[i][evt](prev, ...)
+    end
   end
   return St8.old[evt](prev)
+end
+
+-----------------------------------------------------
+-- set the order in which _States_ handle `evt` to `order` (everything except "bottom" is considered as _top-first_, the default)
+function St8.order(evt, order)
+  St8._order[evt] = order
 end
 
 ------------------------------------------
@@ -69,15 +82,16 @@ end
 ------------------------------------------
 -- push the _State_ `new` to the current _Stack_ (it will run in parallel to the current one)
 function St8.push(new, ...)
-  table.insert(St8.stacks, new)
+  table.insert(St8.stacks[#St8.stacks], new)
   new:enter(nil, ...)
 end
 
 ---------------------------------------
 -- pop one _State_ from the current _Stack_
 function St8.pop(...)
-  assert(#St8.stacks[#St8.stacks] ~= 0, "Stack is already empty!")
-  table.remove(St8.stacks[#St8.stacks]):exit(nil, ...)
+  local stack = St8.stacks[#St8.stacks]
+  assert(#stack ~= 0, "Stack is already empty!")
+  table.remove(stack):exit(nil, ...)
 end
 
 --------------------------------------------------
