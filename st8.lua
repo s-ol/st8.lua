@@ -83,7 +83,7 @@ end
 -- push the _State_ `new` to the current _Stack_ (it will run in parallel to the current one)
 function St8.push(new, ...)
   table.insert(St8.stacks[#St8.stacks], new)
-  new:enter(nil, ...)
+  new.enter(nil, ...)
 end
 
 ---------------------------------------
@@ -91,7 +91,7 @@ end
 function St8.pop(...)
   local stack = St8.stacks[#St8.stacks]
   assert(#stack ~= 0, "Stack is already empty!")
-  table.remove(stack):exit(nil, ...)
+  table.remove(stack).exit(nil, ...)
 end
 
 --------------------------------------------------
