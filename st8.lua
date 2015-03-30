@@ -52,11 +52,10 @@ end
 ---------------------------------------
 -- handle `evt` using the current _Stack_
 function St8.handle(evt, ...)
-  print("handlin",evt,...)
   local stack = St8.stacks[#St8.stacks]
   local prev = nil
-  for i=#stack,1,-1 do
-    prev = stack[i][evt](prev, ...)
+  for _,state in ipairs(stack) do
+    prev = state[evt](prev, ...)
   end
   return St8.old[evt](prev)
 end
