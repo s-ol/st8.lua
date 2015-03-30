@@ -19,7 +19,7 @@ You can add and remove _Stacks_ (elements on the primary stack) using `pause` an
 You can add and remove _States_ (elements on the secondary stack) using `push` and `pop`.
 
 All methods accept a variable number of arguments, these arguments will be passed on both to the last _State_(s) **and** the new ones.
-`push` and `pause` accept lists or single _States_ as arguments.
+`init` and `pause` accept lists or single _States_ as arguments.
 
 Events
 ------
