@@ -6,10 +6,10 @@ Concept
 -------
 St8 keeps two _Stacks_ of _States_:
 
-              Movement  `^` 
-            Input State `Isecondary stack`
-    Menu  -    Game     `I`  - Pause Menu Overlay 
-    `--------------primary stack--------------->`
+              Movement                            ^
+             Input State                          | secondary stacks
+    Menu  -    Game      - Pause Menu Overlay     |
+    ---------------primary stack--------------->
 
 All _States_ in the currently active _Stack_ will run in parallel (i.e. receive events)
 
