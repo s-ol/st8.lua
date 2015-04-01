@@ -88,10 +88,22 @@ end
 
 ---------------------------------------
 -- pop one _State_ from the current _Stack_
-function St8.pop(...)
+function St8.pop(which, ...)
   local stack = St8.stacks[#St8.stacks]
   assert(#stack ~= 0, "Stack is already empty!")
-  table.remove(stack).exit(nil, ...)
+  local prev = nil
+  if not which or type(which) == "number" then
+    for i=1,(which or 1) do
+      prev = table.remove(stack).exit(prev, ...)
+    end
+  else
+    for i,v in ipairs(stack) do
+      if v == which then
+        table.remove(stack, i).exit(prev, ...)
+      end
+    end
+  end
+  return prev
 end
 
 --------------------------------------------------

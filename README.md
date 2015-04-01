@@ -15,11 +15,14 @@ All _States_ in the currently active _Stack_ will run in parallel (i.e. receive 
 
 Usage
 -----
-You can add and remove _Stacks_ (elements on the primary stack) using `pause` and `remove`.
+You can add and remove _Stacks_ (elements on the primary stack) using `pause` and `resume`.  
 You can add and remove _States_ (elements on the secondary stack) using `push` and `pop`.
 
 All methods accept a variable number of arguments, these arguments will be passed on both to the last _State_(s) **and** the new ones.
 `init` and `pause` accept lists or single _States_ as arguments.
+
+`pop` accepts one parameter before the varargs that are passed on. If it is a number that many _States_ from the top of the _Stack_ will be popped.
+Otherwise it will attempt to remove the state you specify as a parameter. If you want "default" behaviour but pass arguments, use `St8.pop(1, ...)`.
 
 Events
 ------
