@@ -1,5 +1,5 @@
 local St8 = {
-  _VERSION = "St8 v1.0",
+  _VERSION = "St8 v1.1",
   _DESCRIPTION = "A tiny double-stacked state manging library for Lua/LÖVE",
   _LICENSE     = [[
     MIT LICENSE
@@ -109,19 +109,21 @@ end
 --------------------------------------------------
 -- pause current _Stack_ and transition to `new` _State_ (if `new` is numerically indexed, it will be used as a new Stack)
 function St8.pause(new, ...)
-  St8.handle("pause", ...)
+  local r = St8.handle("pause", ...)
   if not new[1] then new = {new} end
   table.insert(St8.stacks, new)
   St8.handle("enter", ...)
+  return r
 end
 
 ------------------------
 -- resume previous _Stack_
 function St8.resume(...)
   assert(#St8.stacks ~= 0, "no Stack to resume!")
-  St8.handle("exit", ...)
+  local r = St8.handle("exit", ...)
   table.remove(St8.stacks)
   St8.handle("resume", ...)
+  return r
 end
 
 return St8
