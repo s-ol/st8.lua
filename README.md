@@ -1,4 +1,4 @@
-St8.lua
+St8.lua ![](https://img.shields.io/travis/S0lll0s/st8.lua.svg) ![](https://img.shields.io/coveralls/S0lll0s/st8.lua.svg)
 =======
 A tiny double-stacked state manging library for Lua/LÖVE
 

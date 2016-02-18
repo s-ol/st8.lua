@@ -27,103 +27,121 @@ local St8 = {
   ]]
 }
 
-local CALLBACKS = {"draw", "focus", "keypressed", "keyreleased", "load", "mousefocus", "mousemoved", "mousepressed", "mousereleased", "quit", "resize", "run", "textinput", "threaderror", "update", "visible"}
-
-local State = {}
-for _,cb in ipairs({"enter", "exit", "pause", "resume", unpack(CALLBACKS)}) do
-  State[cb] = function (p, ...) return p end
+local HANDLERS = {"draw", "update"}
+if love and love.handlers then
+  for handler in pairs(love.handlers) do
+    table.insert(HANDLERS, handler)
+  end
 end
-St8.old = setmetatable({}, {__index=State})
-St8._order = {}
 
----------------------------------------------------
--- register St8 with LÖVE callbacks and enter `state` (if `state` is numerically indexed, it will be used as a _Stack_)
-function St8.init(state, ...)
-  for _,cb in ipairs(CALLBACKS) do
-    St8.old[cb] = love[cb]
-    love[cb] = function (...)
-      return St8.handle(cb, ...)
+local St8 = {}
+local stacks = {{}}
+local order = {}
+
+--                                                          utilities & options
+--                           ╻ ╻╺┳╸╻╻  ╻╺┳╸╻┏━╸┏━┓   ┏┓     ┏━┓┏━┓╺┳╸╻┏━┓┏┓╻┏━┓
+--                           ┃ ┃ ┃ ┃┃  ┃ ┃ ┃┣╸ ┗━┓   ┃╺╋╸   ┃ ┃┣━┛ ┃ ┃┃ ┃┃┗┫┗━┓
+--                           ┗━┛ ╹ ╹┗━╸╹ ╹ ╹┗━╸┗━┛   ┗━┛    ┗━┛╹   ╹ ╹┗━┛╹ ╹┗━┛
+
+-- hooks to the LÖVE handlers
+function St8.hook()
+  for _, event in ipairs(HANDLERS) do
+    local orig = love[event]
+    love[event] = function (...)
+      local ret
+      if orig then
+        ret = orig(...)
+      end
+      St8.handle(event, ...)
+      return ret
     end
   end
-  if not state[1] then state = {state} end
-  St8.stacks = {state}
-  St8.handle("enter", ...)
 end
 
----------------------------------------
--- handle `evt` using the current _Stack_
-function St8.handle(evt, ...)
-  local stack = St8.stacks[#St8.stacks]
-  local prev
-  if St8._order[evt] == "bottom" then
-    for _,state in ipairs(stack) do
-      prev = state[evt](prev, ...)
-    end
-  else
-    for i=#stack,1,-1 do
-      prev = stack[i][evt](prev, ...)
-    end
-  end
-  return St8.old[evt](prev)
+-- sets the Stack execution order for a given event type
+-- default values for 'direction' are anything except "bottom" and "bottom-up"
+function St8.order(event, direction)
+  order[event] = direction
 end
 
------------------------------------------------------
--- set the order in which _States_ handle `evt` to `order` (everything except "bottom" is considered as _top-first_, the default)
-function St8.order(evt, order)
-  St8._order[evt] = order
-end
-
-------------------------------------------
--- create a new _State_ (set it's metatable)
-function St8.new()
-  return setmetatable({}, {__index=State})
-end
-
-------------------------------------------
--- push the _State_ `new` to the current _Stack_ (it will run in parallel to the current one)
-function St8.push(new, ...)
-  table.insert(St8.stacks[#St8.stacks], new)
-  new.enter(nil, ...)
-end
-
----------------------------------------
--- pop one _State_ from the current _Stack_
-function St8.pop(which, ...)
-  local stack = St8.stacks[#St8.stacks]
-  assert(#stack ~= 0, "Stack is already empty!")
-  local prev = nil
-  if not which or type(which) == "number" then
-    for i=1,(which or 1) do
-      prev = table.remove(stack).exit(prev, ...)
-    end
-  else
-    for i,v in ipairs(stack) do
-      if v == which then
-        table.remove(stack, i).exit(prev, ...)
+function St8.bind_instance(state)
+  local proxy = {}
+  for key, val in pairs(state) do
+    if type(val) == "function" or getmetatable(val).__call then
+      proxy[key] = function (...)
+        state[key](state, ...)
       end
     end
   end
-  return prev
+  return setmetatable(proxy, {__index=state})
 end
 
---------------------------------------------------
--- pause current _Stack_ and transition to `new` _State_ (if `new` is numerically indexed, it will be used as a new Stack)
-function St8.pause(new, ...)
-  local r = St8.handle("pause", ...)
-  if not new[1] then new = {new} end
-  table.insert(St8.stacks, new)
+--                                                           stack manipulation
+--                           ┏━┓╺┳╸┏━┓┏━╸╻┏    ┏┳┓┏━┓┏┓╻╻┏━┓╻ ╻╻  ┏━┓╺┳╸╻┏━┓┏┓╻
+--                           ┗━┓ ┃ ┣━┫┃  ┣┻┓   ┃┃┃┣━┫┃┗┫┃┣━┛┃ ┃┃  ┣━┫ ┃ ┃┃ ┃┃┗┫
+--                           ┗━┛ ╹ ╹ ╹┗━╸╹ ╹   ╹ ╹╹ ╹╹ ╹╹╹  ┗━┛┗━╸╹ ╹ ╹ ╹┗━┛╹ ╹
+function St8.push(state, ...)
+  table.insert(stacks[#stacks], state)
+  if state.enter then
+    return state.enter(...)
+  end
+end
+
+function St8.pop(...)
+  local s = table.remove(stacks[#stacks])
+  if not next(stacks[#stacks]) then
+    table.insert(stacks[#stacks], {})
+  end
+  return s.exit(...)
+end
+
+function St8.new()
+  return {}
+end
+
+function St8.pause(state, ...)
+  -- treat as stack if empty or numerically-indexed
+  if not state[1] and next(state) then
+    state = {state}
+  end
+  St8.handle("pause", ...)
+  table.insert(stacks, state)
   St8.handle("enter", ...)
-  return r
 end
 
-------------------------
--- resume previous _Stack_
 function St8.resume(...)
-  assert(#St8.stacks ~= 0, "no Stack to resume!")
-  local r = St8.handle("exit", ...)
-  table.remove(St8.stacks)
+  if not stacks[2] then
+    error("no Stack to resume")
+  end
+  St8.handle("exit", ...)
+  table.remove(stacks)
   St8.handle("resume", ...)
-  return r
 end
 
-return St8
+function St8.handle(event, ...)
+  local l
+  if order[event] == "bottom-up" or order[event] == "bottom" then
+    for _, state in ipairs(stacks[#stacks]) do
+      if state[event] then
+        l = state[event](l, ...)
+      end
+    end
+  else
+    local stack = stacks[#stacks]
+    for i=#stack,1,-1 do
+      if stack[i][event] then
+        l = stack[i][event](l, ...)
+      end
+    end
+  end
+  return l
+end
+
+return setmetatable(St8, {
+  __index = function (St8, key)
+    St8[key] = function (...)
+      St8.handle(key, ...)
+    end
+    return St8[key]
+  end
+})
