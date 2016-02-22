@@ -64,6 +64,8 @@ function St8.order(event, direction)
   order[event] = direction
 end
 
+-- bind a State's instance "methods" to that State (= make : syntax work)
+-- run on an object-esque table before passing into `push` or `pause`
 function St8.bind_instance(state)
   local proxy = {}
   for key, val in pairs(state) do
@@ -80,6 +82,8 @@ end
 --                           ┏━┓╺┳╸┏━┓┏━╸╻┏    ┏┳┓┏━┓┏┓╻╻┏━┓╻ ╻╻  ┏━┓╺┳╸╻┏━┓┏┓╻
 --                           ┗━┓ ┃ ┣━┫┃  ┣┻┓   ┃┃┃┣━┫┃┗┫┃┣━┛┃ ┃┃  ┣━┫ ┃ ┃┃ ┃┃┗┫
 --                           ┗━┛ ╹ ╹ ╹┗━╸╹ ╹   ╹ ╹╹ ╹╹ ╹╹╹  ┗━┛┗━╸╹ ╹ ╹ ╹┗━┛╹ ╹
+
+-- push a State to the current Stack
 function St8.push(state, ...)
   table.insert(stacks[#stacks], state)
   if state.enter then
@@ -87,18 +91,18 @@ function St8.push(state, ...)
   end
 end
 
+-- pop the topmost State off the current Stack
 function St8.pop(...)
-  local s = table.remove(stacks[#stacks])
   if not next(stacks[#stacks]) then
-    table.insert(stacks[#stacks], {})
+    error("no State left to pop")
   end
+  local s = table.remove(stacks[#stacks])
   return s.exit(...)
 end
 
-function St8.new()
-  return {}
-end
-
+-- pause the current Stack and run a new Stack or State
+-- if the first argument is numerically indexed and not empty, treat as a Stack
+-- otherwise treat as a single State
 function St8.pause(state, ...)
   -- treat as stack if empty or numerically-indexed
   if not state[1] and next(state) then
@@ -109,6 +113,7 @@ function St8.pause(state, ...)
   St8.handle("enter", ...)
 end
 
+-- resume the previous Stack and remove the current Stack
 function St8.resume(...)
   if not stacks[2] then
     error("no Stack to resume")
@@ -118,6 +123,8 @@ function St8.resume(...)
   St8.handle("resume", ...)
 end
 
+
+-- handle an event with the current Stack
 function St8.handle(event, ...)
   local l
   if order[event] == "bottom-up" or order[event] == "bottom" then
