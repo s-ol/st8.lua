@@ -12,7 +12,8 @@ function textbox(text, x, y, r, g, b)
 end
 
 function love.load()
-  St8.init(require"states.menu")  -- start running the MainMenu state
+  St8.hook()                      -- subscribe to LÖVE callbacks
+  St8.push(require"states.menu")  -- start running the MainMenu state
   St8.order("draw", "bottom")     -- make draw run bottom-to-top so specific gamestates draw over general ones
   font = love.graphics.getFont()  -- let's not have _too_ much overhead
 end

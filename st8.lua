@@ -1,5 +1,5 @@
 local St8 = {
-  _VERSION = "St8 v1.1",
+  _VERSION = "St8 v2.1",
   _DESCRIPTION = "A tiny double-stacked state manging library for Lua/LÖVE",
   _LICENSE     = [[
     MIT LICENSE
@@ -78,6 +78,15 @@ function St8.bind_instance(state)
   return setmetatable(proxy, {__index=state})
 end
 
+function St8.debug_trace()
+  for i, stack in ipairs(stacks) do
+    print("Stack #" .. i .. ":")
+    for i,v in ipairs(stack) do
+      print("", i,v)
+    end
+  end
+end
+
 --                                                           stack manipulation
 --                           ┏━┓╺┳╸┏━┓┏━╸╻┏    ┏┳┓┏━┓┏┓╻╻┏━┓╻ ╻╻  ┏━┓╺┳╸╻┏━┓┏┓╻
 --                           ┗━┓ ┃ ┣━┫┃  ┣┻┓   ┃┃┃┣━┫┃┗┫┃┣━┛┃ ┃┃  ┣━┫ ┃ ┃┃ ┃┃┗┫
@@ -97,7 +106,39 @@ function St8.pop(...)
     error("no State left to pop")
   end
   local s = table.remove(stacks[#stacks])
-  return s.exit(...)
+  if s.exit then
+    return s.exit(...)
+  end
+end
+
+-- remove the specified State from current Stack
+function St8.remove(state, ...)
+  for i, s in ipairs(stacks[#stacks]) do
+    if s == state then
+      table.remove(stacks[#stacks], i)
+      if s.exit then
+        return s.exit(...)
+      end
+      return
+    end
+  end
+end
+
+-- swap out the specified State on the current Stack
+function St8.swap(old, new, ...)
+  for i, s in ipairs(stacks[#stacks]) do
+    if s == old then
+      stacks[#stacks][i] = new
+      if old.exit then
+        old.exit(...)
+      end
+      if new.enter then
+        return new.enter(...)
+      end
+      return
+    end
+  end
+  error("old State not on Stack")
 end
 
 -- pause the current Stack and run a new Stack or State

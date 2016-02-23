@@ -15,11 +15,17 @@ All _States_ in the currently active _Stack_ will run in parallel (i.e. receive 
 
 Usage
 -----
-You can add and remove _Stacks_ (elements on the primary stack) using `pause` and `resume`.  
-You can add and remove _States_ (elements on the secondary stack) using `push` and `pop`.
+Require `st8.lua` to and keep the return value around.
+Call `hook()` to hook `st8.lua` up to the LÖVE handlers/callbacks.
+Using `order(event, order)` the execution order for a single event can be changed, pass anything but `"bottom"` or `"bottom-up"` to execute the events top-down.
+The *bottom-up* order is recommended for example for the `draw` callback.
 
-All methods accept a variable number of arguments, these arguments will be passed on both to the last _State_(s) **and** the new ones.
-`init` and `pause` accept lists or single _States_ as arguments.
+You can add and remove _Stacks_ (elements on the primary stack) using `pause(state_or_stack)` and `resume()`.  
+You can add and remove _States_ (elements on the secondary stack) using `push(state)` and `pop()`.  
+You can swap States using `swap(old, new)` and remove a specific State using `remove(state)`.
+
+All methods accept additional arguments, these will be passed on both to the last _State_(s) **and** the new ones.
+`pause` accepts lists or single _States_ as arguments.
 
 Events
 ------

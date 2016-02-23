@@ -1,5 +1,9 @@
-local PauseMenu = St8.new()
+local PauseMenu = {}
 
+--                                                                   pause menu
+--                                               ┏━┓┏━┓╻ ╻┏━┓┏━╸   ┏┳┓┏━╸┏┓╻╻ ╻
+--                                               ┣━┛┣━┫┃ ┃┗━┓┣╸    ┃┃┃┣╸ ┃┗┫┃ ┃
+--                                               ╹  ╹ ╹┗━┛┗━┛┗━╸   ╹ ╹┗━╸╹ ╹┗━┛
 function PauseMenu:draw()
   textbox("< p to resume game >", 280, 300)
   textbox("o for options menu", 280, 317)

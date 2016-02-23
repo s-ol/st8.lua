@@ -1,5 +1,9 @@
-local OptionsMenu = St8.new()
+local OptionsMenu = {}
 
+--                                                                      options
+--                                                          ┏━┓┏━┓╺┳╸╻┏━┓┏┓╻┏━┓
+--                                                          ┃ ┃┣━┛ ┃ ┃┃ ┃┃┗┫┗━┓
+--                                                          ┗━┛╹   ╹ ╹┗━┛╹ ╹┗━┛
 function OptionsMenu:draw()
   textbox("Options: f to toggle fullscreen", 280, 150, 125, 20, 20)
   textbox("       esc to resume whatever you were doing", 280, 167, 125, 20, 20)

@@ -147,13 +147,111 @@ describe("St8", function ()
     describe("when popping States", function ()
       before_each(function ()
         one, two, three = {}, {}, {}
+        stub_all(one,   "exit", "draw")
+        stub_all(two,   "exit", "draw")
+        stub_all(three, "exit", "draw")
+
         St8.push(one)
       end)
 
       it("calls exit", function ()
-        stub(one, "exit")
+        St8.push(two)
         St8.pop()
+
+        assert.stub(one.exit).was_not_called()
+        assert.stub(two.exit).was_called()
+      end)
+
+      it("pops the topmost State", function ()
+        St8.push(two)
+        St8.push(three)
+
+        St8.draw()
+
+        assert.stub(  one.draw).was_called()
+        assert.stub(  two.draw).was_called()
+        assert.stub(three.exit).was_not_called()
+      end)
+    end)
+
+    describe("when removing States", function ()
+      before_each(function ()
+        one, two, three = {}, {}, {}
+        stub_all(one,   "exit", "draw")
+        stub_all(two,   "exit", "draw")
+        stub_all(three, "exit", "draw")
+
+        St8.push(one)
+        St8.push(two)
+        St8.push(three)
+      end)
+
+      it("calls exit", function ()
+        St8.remove(one)
+
+        assert.stub(  one.exit).was_called()
+        assert.stub(  two.exit).was_not_called()
+        assert.stub(three.exit).was_not_called()
+      end)
+
+      it("doesn't screw up", function ()
+        St8.remove(two)
+
+        St8.draw()
+
+        assert.stub(  one.exit).was_not_called()
+        assert.stub(  two.exit).was_called()
+        assert.stub(three.exit).was_not_called()
+
+        assert.stub(  one.draw).was_called()
+        assert.stub(  two.draw).was_not_called()
+        assert.stub(three.draw).was_called()
+      end)
+
+      it("silently fails", function ()
+        assert.has_no.error(function ()
+          St8.remove(one)
+          St8.remove(one)
+          St8.remove(one)
+        end)
+
+        assert.stub(one.exit).was_called(1)
+      end)
+    end)
+
+    describe("when swapping States", function ()
+      before_each(function ()
+        one, two, three = {}, {}, {}
+        stub_all(one,   "enter", "exit", "draw")
+        stub_all(two,   "enter", "exit", "draw")
+        stub_all(three, "enter", "exit", "draw")
+
+        St8.push(one)
+      end)
+
+      it("calls enter and exit", function ()
+        St8.swap(one, two)
+
         assert.stub(one.exit).was_called()
+        assert.stub(two.enter).was_called()
+
+        St8.swap(two, three)
+
+        assert.stub(one.exit).was_called(1)
+        assert.stub(two.enter).was_called(1)
+        assert.stub(two.exit).was_called(1)
+        assert.stub(three.enter).was_called(1)
+      end)
+
+      it("works", function ()
+        St8.push(three)
+        St8.swap(one, two)
+
+        St8.draw()
+
+        assert.stub(  one.draw).was_not_called()
+        assert.stub(  two.draw).was_called()
+        assert.stub(three.draw).was_called()
       end)
     end)
 
